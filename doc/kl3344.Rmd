@@ -1,0 +1,723 @@
+---
+title: "Philosophy Data Story"
+author: "Ke Liu (kl3344)"
+date: "2022/2/1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+Sys.setlocale(category="LC_ALL", locale = "English_United States.1252")
+```
+
+
+<center>![](pic2.jpg)</center>
+
+
+```{r, include=FALSE}
+library(jiebaR, jiebaRD)
+library(dplyr)
+library(tidyverse)
+library(tm)
+library(RColorBrewer)
+library(knitr)
+library(wordcloud)
+library(tidytext)
+library(htmlwidgets)
+library(ggthemes)
+library(ggplot2)
+library(ggpubr)
+library(syuzhet)
+
+#Reading data and data cleaning
+df <- read.csv("philosophy_data.csv")
+df1 <- df[!grepl("[[:punct:]]", df$school), ]
+school <- df1[!grepl("\\ ", df1$school),] %>% select(school) %>% unique()
+df_school <- df %>% filter(school %in% c("plato", "aristotle", "rationalism", "empiricism", "german_idealism", "analytic", "capitalism", "communism", "stoicism", "feminism" ))
+df_school <- df_school %>% select(-sentence_spacy, -lemmatized_str, -sentence_str)
+
+#Group by school
+plato <- df_school %>% filter(school == "plato")
+aristotle <- df_school %>% filter(school == "aristotle")
+rationalism <- df_school %>% filter(school == "rationalism")
+empiricism <- df_school %>% filter(school == "empiricism")
+german_idealism <- df_school %>% filter(school == "german_idealism")
+analytic <- df_school %>% filter(school == "analytic")
+capitalism <- df_school %>% filter(school == "capitalism")
+communism <- df_school %>% filter(school == "communism")
+stoicism <- df_school %>% filter(school == "stoicism")
+feminism <- df_school %>% filter(school == "feminism")
+
+#Stopword setting
+stopword <- read.table("stopword.txt")
+stopword <- gsub('[,]','',stopword)
+stopword <- as.vector(stopword)
+
+```
+
+## 1.Preface
+
+  🧐                🥸
+-------           ------ 
+Plato             Aristotle
+Rationalism       Empiricism
+German Idealism   Analytic
+Capitalism        Communism
+Stoicism          Feminism
+
+From the dataset History of Philosophy we can find a lot of features of philosophy. What interests me most is the different schools and the relationship between pairs of them. There are 10 schools in this dataset and each one has a opposite. The pairs of schools are listed above.  
+In this markdown I will leverage word cloud, word frequency chart and sentiment analysis to present some findings of me in those comparison.
+
+```{r, include=FALSE}
+#Preparation for word cloud
+plat.all<-SimpleCorpus(VectorSource(plato$sentence_lowered))
+plat.all<-tm_map(plat.all, stripWhitespace)
+plat.all<-tm_map(plat.all, removeWords, stopword)
+plat.all<-tm_map(plat.all, removeWords, character(0))
+plat.all<-tm_map(plat.all, removePunctuation)
+plat.tdm<-TermDocumentMatrix(plat.all)
+plat.tidy=tidy(plat.tdm)
+plat.overall=summarise(group_by(plat.tidy, term), sum(count))
+
+aris.all<-SimpleCorpus(VectorSource(aristotle$sentence_lowered))
+aris.all<-tm_map(aris.all, stripWhitespace)
+aris.all<-tm_map(aris.all, removeWords, stopword)
+aris.all<-tm_map(aris.all, removeWords, character(0))
+aris.all<-tm_map(aris.all, removePunctuation)
+aris.tdm<-TermDocumentMatrix(aris.all)
+aris.tidy=tidy(aris.tdm)
+aris.overall=summarise(group_by(aris.tidy, term), sum(count))
+
+rati.all<-SimpleCorpus(VectorSource(rationalism$sentence_lowered))
+rati.all<-tm_map(rati.all, stripWhitespace)
+rati.all<-tm_map(rati.all, removeWords, stopword)
+rati.all<-tm_map(rati.all, removeWords, character(0))
+rati.all<-tm_map(rati.all, removePunctuation)
+rati.tdm<-TermDocumentMatrix(rati.all)
+rati.tidy=tidy(rati.tdm)
+rati.overall=summarise(group_by(rati.tidy, term), sum(count))
+
+empi.all<-SimpleCorpus(VectorSource(empiricism$sentence_lowered))
+empi.all<-tm_map(empi.all, stripWhitespace)
+empi.all<-tm_map(empi.all, removeWords, stopword)
+empi.all<-tm_map(empi.all, removeWords, character(0))
+empi.all<-tm_map(empi.all, removePunctuation)
+empi.tdm<-TermDocumentMatrix(empi.all)
+empi.tidy=tidy(empi.tdm)
+empi.overall=summarise(group_by(empi.tidy, term), sum(count))
+
+germ.all<-SimpleCorpus(VectorSource(german_idealism$sentence_lowered))
+germ.all<-tm_map(germ.all, stripWhitespace)
+germ.all<-tm_map(germ.all, removeWords, stopword)
+germ.all<-tm_map(germ.all, removeWords, character(0))
+germ.all<-tm_map(germ.all, removePunctuation)
+germ.tdm<-TermDocumentMatrix(germ.all)
+germ.tidy=tidy(germ.tdm)
+germ.overall=summarise(group_by(germ.tidy, term), sum(count))
+
+anal.all<-SimpleCorpus(VectorSource(analytic$sentence_lowered))
+anal.all<-tm_map(anal.all, stripWhitespace)
+anal.all<-tm_map(anal.all, removeWords, stopword)
+anal.all<-tm_map(anal.all, removeWords, character(0))
+anal.all<-tm_map(anal.all, removePunctuation)
+anal.tdm<-TermDocumentMatrix(anal.all)
+anal.tidy=tidy(anal.tdm)
+anal.overall=summarise(group_by(anal.tidy, term), sum(count))
+
+capi.all<-SimpleCorpus(VectorSource(capitalism$sentence_lowered))
+capi.all<-tm_map(capi.all, stripWhitespace)
+capi.all<-tm_map(capi.all, removeWords, stopword)
+capi.all<-tm_map(capi.all, removeWords, character(0))
+capi.all<-tm_map(capi.all, removePunctuation)
+capi.tdm<-TermDocumentMatrix(capi.all)
+capi.tidy=tidy(capi.tdm)
+capi.overall=summarise(group_by(capi.tidy, term), sum(count))
+
+comm.all<-SimpleCorpus(VectorSource(communism$sentence_lowered))
+comm.all<-tm_map(comm.all, stripWhitespace)
+comm.all<-tm_map(comm.all, removeWords, stopword)
+comm.all<-tm_map(comm.all, removeWords, character(0))
+comm.all<-tm_map(comm.all, removePunctuation)
+comm.tdm<-TermDocumentMatrix(comm.all)
+comm.tidy=tidy(comm.tdm)
+comm.overall=summarise(group_by(comm.tidy, term), sum(count))
+
+stoi.all<-SimpleCorpus(VectorSource(stoicism$sentence_lowered))
+stoi.all<-tm_map(stoi.all, stripWhitespace)
+stoi.all<-tm_map(stoi.all, removeWords, stopword)
+stoi.all<-tm_map(stoi.all, removeWords, character(0))
+stoi.all<-tm_map(stoi.all, removePunctuation)
+stoi.tdm<-TermDocumentMatrix(stoi.all)
+stoi.tidy=tidy(stoi.tdm)
+stoi.overall=summarise(group_by(stoi.tidy, term), sum(count))
+
+femi.all<-SimpleCorpus(VectorSource(feminism$sentence_lowered))
+femi.all<-tm_map(femi.all, stripWhitespace)
+femi.all<-tm_map(femi.all, removeWords, stopword)
+femi.all<-tm_map(femi.all, removeWords, character(0))
+femi.all<-tm_map(femi.all, removePunctuation)
+femi.tdm<-TermDocumentMatrix(femi.all)
+femi.tidy=tidy(femi.tdm)
+femi.overall=summarise(group_by(femi.tidy, term), sum(count))
+```
+
+
+
+```{r, fig.height=3, fig.width=3, include = FALSE}
+#Generate word cloud
+set.seed(2022)
+seed <- .Random.seed
+wordcloud(plat.overall$term, plat.overall$`sum(count)`,
+            scale=c(2,0.5),
+            max.words=100,
+            min.freq=1,
+            random.order=FALSE,
+            rot.per=0.35,
+            random.color=FALSE,
+            colors=brewer.pal(8,"Dark2"))
+wordcloud(aris.overall$term, aris.overall$`sum(count)`,
+            scale=c(2,0.5),
+            max.words=100,
+            min.freq=1,
+            random.order=FALSE,
+            rot.per=0.35,
+            random.color=FALSE,
+            colors=brewer.pal(8,"Dark2"))
+wordcloud(rati.overall$term, rati.overall$`sum(count)`,
+            scale=c(2,0.5),
+            max.words=100,
+            min.freq=1,
+            random.order=FALSE,
+            rot.per=0.35,
+            random.color=FALSE,
+            colors=brewer.pal(8,"Dark2"))
+wordcloud(empi.overall$term, empi.overall$`sum(count)`,
+            scale=c(2,0.5),
+            max.words=100,
+            min.freq=1,
+            random.order=FALSE,
+            rot.per=0.35,
+            random.color=FALSE,
+            colors=brewer.pal(8,"Dark2"))
+wordcloud(germ.overall$term, germ.overall$`sum(count)`,
+            scale=c(2,0.5),
+            max.words=100,
+            min.freq=1,
+            random.order=FALSE,
+            rot.per=0.35,
+            random.color=FALSE,
+            colors=brewer.pal(8,"Dark2"))
+wordcloud(anal.overall$term, anal.overall$`sum(count)`,
+            scale=c(2,0.5),
+            max.words=100,
+            min.freq=1,
+            random.order=FALSE,
+            rot.per=0.35,
+            random.color=FALSE,
+            colors=brewer.pal(8,"Dark2"))
+wordcloud(capi.overall$term, capi.overall$`sum(count)`,
+            scale=c(2,0.5),
+            max.words=100,
+            min.freq=1,
+            random.order=FALSE,
+            rot.per=0.35,
+            random.color=FALSE,
+            colors=brewer.pal(8,"Dark2"))
+wordcloud(comm.overall$term, comm.overall$`sum(count)`,
+            scale=c(2,0.5),
+            max.words=100,
+            min.freq=1,
+            random.order=FALSE,
+            rot.per=0.35,
+            random.color=FALSE,
+            colors=brewer.pal(8,"Dark2"))
+wordcloud(stoi.overall$term, stoi.overall$`sum(count)`,
+            scale=c(2,0.5),
+            max.words=100,
+            min.freq=1,
+            random.order=FALSE,
+            rot.per=0.35,
+            random.color=FALSE,
+            colors=brewer.pal(8,"Dark2"))
+wordcloud(femi.overall$term, femi.overall$`sum(count)`,
+            scale=c(2,0.5),
+            max.words=100,
+            min.freq=1,
+            random.order=FALSE,
+            rot.per=0.35,
+            random.color=FALSE,
+            colors=brewer.pal(8,"Dark2"))
+```
+
+## 2.Plato vs Aristotle
+### 2.1 Introduction
+
+The main difference between Plato and Aristotle philosophy is that the philosophy of Plato is more theoretical and abstract in nature, whereas the philosophy of Aristotle is more practical and experimental in nature.Plato (428–348 BCE) and Aristotle (384–322 BCE) are two of the most well-known and studied figures in Western philosophy. Plato was a pupil of Socrates, while Aristotle was a pupil of Plato. Therefore, we can observe several connections in their philosophy.
+
+There should be a book list in this part including publications and authors. But for Plato and Aristotle, they are both authors and schools literally. And the titles are Complete Works. Guess that's because their writings are numerous and dated.
+
+
+### 2.2 Word Cloud and Frequency
+
+![](wordcloud1.png)
+
+```{r, fig.height = 3, fig.width = 8, echo = FALSE}
+#Word Frequency
+plat.word <- as.data.frame(as.matrix(plat.overall))
+plat.word <- plat.word[order(plat.word$`sum(count)`, decreasing = TRUE),] %>% head(10) %>% rename(n = 'sum(count)') %>% mutate(term = fct_reorder(term,n))
+p1_plat <- ggplot(plat.word, aes(x = reorder(term, n), y = n)) +
+  geom_bar(stat = 'identity', fill = '#f88421', colour = '#e8490f') +
+  labs(x = "Words", y = "Frequency", title = "Plato Words Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  coord_flip()
+
+aris.word <- as.data.frame(as.matrix(aris.overall))
+aris.word <- aris.word[order(aris.word$`sum(count)`, decreasing = TRUE),] %>% head(10) %>% rename(n = 'sum(count)') %>% mutate(term = fct_reorder(term,n))
+p1_aris <- ggplot(aris.word, aes(x = reorder(term, n), y = n)) +
+  geom_bar(stat = 'identity', fill = '#3f60aa', colour = '#2e409a') +
+  labs(x = "Words", y = "Frequency", title = "Aristotle Words Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  coord_flip()
+
+ggarrange(p1_plat,p1_aris,ncol = 2, nrow = 1)
+```
+
+
+🧔 Socrates is the most frequent word in Plato’s passages. It is not surprising because most of what we know about Socrates comes from his student Plato. Plato’s writings are generally divided into three broad groups: the Socratic dialogues, the Middle dialogues and the Later dialogues. And Socratic dialogues take a large part of his work.  
+Socrates defends his actions and his beliefs in one of the finest speeches in history as he stands trial before the men of Athens. This speech was recorded as 《Apology》 in Plato’s book 《Last days of Socrates》. Guess that’s the origin of the negative sentiment.
+
+👳 For Aristotle, animals appears most frequently in his articles. Actually Aristotle’s intellectual range was vast, covering most of the sciences and many of the arts, including biology, botany, chemistry, ethics, history, logic, and zoology. He was the founder of formal logic, devising for it a finished system that for centuries was regarded as the sum of the discipline; and he pioneered the study of zoology, both observational and theoretical, in which some of his work remained unsurpassed until the 19th century. But he is, of course, most outstanding as a philosopher. His writings in ethics and political theory as well as in metaphysics and the philosophy of science continue to be studied, and his work remains a powerful current in contemporary philosophical debate.
+
+
+### 2.3 Sentiment Analytics
+```{r,fig.height = 3, fig.width = 10, echo = FALSE}
+#Sentiment Analytics
+cap_plat <- plato[grep("time", plato$sentence_lowered),]
+text_plat <- cap_plat$sentence_lowered %>% as.character()
+result_plat <- get_nrc_sentiment(text_plat) %>% data.frame()
+sum_plat <- data.frame(colSums(result_plat))
+names(sum_plat) <- "count"
+sum_plat <- cbind("sentiment" = rownames(sum_plat), sum_plat)
+rownames(sum_plat) <- NULL
+p2_plat <- qplot(sentiment, data = sum_plat[1:8,], weight = count, geom = "bar",
+                 fill = sentiment)+
+                 theme_minimal()
+  
+p3_plat <- qplot(sentiment, data = sum_plat[9:10,], weight = count, geom = "bar", fill = sentiment) +
+            theme_minimal()
+
+ggarrange(p2_plat,p3_plat,ncol = 2, nrow = 1) %>%
+      annotate_figure(top=text_grob("Plato Sentiment Results"))
+
+cap_aris <- aristotle[grep("time", aristotle$sentence_lowered),]
+text_aris <- cap_aris$sentence_lowered %>% as.character()
+result_aris <- get_nrc_sentiment(text_aris) %>% data.frame()
+sum_aris <- data.frame(colSums(result_aris))
+names(sum_aris) <- "count"
+sum_aris <- cbind("sentiment" = rownames(sum_aris), sum_aris)
+rownames(sum_aris) <- NULL
+p2_aris <- qplot(sentiment, data = sum_aris[1:8,], weight = count, geom = "bar",
+                 fill = sentiment)+
+                 theme_minimal()
+  
+p3_aris <- qplot(sentiment, data = sum_aris[9:10,], weight = count, geom = "bar", fill = sentiment)+
+            theme_minimal()
+
+ggarrange(p2_aris,p3_aris,ncol = 2, nrow = 1) %>%
+      annotate_figure(top=text_grob("Aristotle Sentiment Results"))
+```
+
+I choose the word "time" which appears several times in both of their works. What is a little bit different from results of other groups is that the ratio of positive and negative sentiment is more balanced. Probably this word is a very neutral word and when describing it there is no obvious emotional preference.
+
+🧔 Plato influenced Aristotle, just as Socrates influenced. For centuries, classical education assigned Plato's works as required reading, and The Republic was the premier work on political theory until the 19th century, admired not only for its views, but also for its elegant prose.
+
+👳 Aristotle and his works became the basis for the both religion and science, especially through the Middle Ages. In religion, Aristotelian ethics were the basis for St. Thomas Aquinas' works that forged Christian thought on free will and the role of virtue.
+
+## 3.Rationalism vs Empiricism
+### 3.1 Publication List
+
+School        Author            Title                                                       Pubulication Date
+--------      ----------        ------------                                                ------------------------
+Rationalism   Spinoza           Ethics                                                      1677
+                                On The Improvement Of Understanding                         1677
+              Leibniz           Theodicy                                                    1710
+              Descartes         Discourse On Method                                         1637
+                                Meditations On First Philosophy                             1641
+              Malebranche       The Search After Truth                                      1674
+
+Empiricism    Locke             Second Treatise On Government                               1689
+                                Essay Concerning Human Understanding                        1689
+              Hume              A Treatise Of Human Nature                                  1739
+                                Dialogues Concerning Natural Religion                       1779
+              Berkeley          Three Dialogues                                             1713
+                                A Treatise Concerning The Principles Of Human Knowledge     1710
+
+First of all it was a historical confrontation of two academic schools of European philosophy in the 17th and 18th century: The rationalists Descartes, Spinoza Leibniz (European continent), versus the U.K.- empirists Bacon, Locke, Hume; the question was: What is the ground, the first source, of human recognition - mind or experience? Immanuel Kant (1724-1804) then tried to unite successfully both roots of recognition in his epoch-making philosophy in a new revolutionary solution of the problem, analyzing the "a priori" - conditions of recognition. 
+
+There is a distinct difference between rationalism and empiricism. In fact, they
+are very plainly the direct opposite of each other. Rationalism is the belief in
+innate ideas, reason, and deduction. Empiricism is the belief in sense
+perception, induction, and that there are no innate ideas. With rationalism,
+believing in innate ideas means to have ideas before we are born.
+
+### 3.2 Word Cloud and Frequency
+
+![](wordcloud2.png)
+
+```{r, fig.height = 3, fig.width = 8, echo = FALSE}
+#Word Frequency
+rati.word <- as.data.frame(as.matrix(rati.overall))
+rati.word <- rati.word[order(rati.word$`sum(count)`, decreasing = TRUE),] %>% head(10) %>% rename(n = 'sum(count)') %>% mutate(term = fct_reorder(term,n))
+p1_rati <- ggplot(rati.word, aes(x = reorder(term, n), y = n)) +
+  geom_bar(stat = 'identity', fill = '#f88421', colour = '#e8490f') +
+  labs(x = "Words", y = "Frequency", title = "Rationalism Words Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  coord_flip()
+
+empi.word <- as.data.frame(as.matrix(empi.overall))
+empi.word <- empi.word[order(empi.word$`sum(count)`, decreasing = TRUE),] %>% head(10) %>% rename(n = 'sum(count)') %>% mutate(term = fct_reorder(term,n))
+p1_empi <- ggplot(empi.word, aes(x = reorder(term, n), y = n)) +
+  geom_bar(stat = 'identity', fill = '#3f60aa', colour = '#2e409a') +
+  labs(x = "Words", y = "Frequency", title = "Empiricism Words Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  coord_flip()
+
+ggarrange(p1_rati,p1_empi,ncol = 2, nrow = 1)
+```
+
+🧠 God becomes the most frequent word in rationalism. Rationalism is an approach to life based on reason and evidence. However, most rationalists would agree that there is no evidence for any arbitrary supernatural authority.  
+Although taking a minor part of it, theistic rationalists believe that God plays an active role in human life, rendering prayer effective. They accept parts of the Bible as divinely inspired, using reason as their criterion for what to accept or reject. Their belief that God intervenes in human affairs and their approving attitude toward parts of the Bible distinguish theistic rationalists from Deists.
+
+🫀 The most common word in empiricism is ideas or idea. Empiricism is a theory that states that knowledge comes only or primarily from sensory experience. Empiricism emphasizes the role of empirical evidence in the formation of ideas, rather than innate ideas or traditions.  
+Empiricism denies the rationalist distinction between empirical and a prior knowledge. All knowledge, the empiricist argues, arises through, and is reducible to, sense perception. Thus, there is no knowledge that arises through reason alone. Thus, empiricism credo is that where there is no experience there is no knowledge.
+
+
+
+### 3.3 Sentiment Analytics
+
+```{r, fig.height = 3, fig.width = 10,echo = FALSE}
+#Sentiment Analytics
+cap_rati <- rationalism[grep("mind", rationalism$sentence_lowered),]
+text_rati <- cap_rati$sentence_lowered %>% as.character()
+result_rati <- get_nrc_sentiment(text_rati) %>% data.frame()
+sum_rati <- data.frame(colSums(result_rati))
+names(sum_rati) <- "count"
+sum_rati <- cbind("sentiment" = rownames(sum_rati), sum_rati)
+rownames(sum_rati) <- NULL
+p2_rati <- qplot(sentiment, data = sum_rati[1:8,], weight = count, geom = "bar",
+                 fill = sentiment)+
+                 theme_minimal()
+  
+p3_rati <- qplot(sentiment, data = sum_rati[9:10,], weight = count, geom = "bar", fill = sentiment) +
+            theme_minimal()
+
+ggarrange(p2_rati,p3_rati,ncol = 2, nrow = 1) %>%
+      annotate_figure(top=text_grob("Rationalism Sentiment Results"))
+
+cap_empi <- empiricism[grep("mind", empiricism$sentence_lowered),]
+text_empi <- cap_empi$sentence_lowered %>% as.character()
+result_empi <- get_nrc_sentiment(text_empi) %>% data.frame()
+sum_empi <- data.frame(colSums(result_empi))
+names(sum_empi) <- "count"
+sum_empi <- cbind("sentiment" = rownames(sum_empi), sum_empi)
+rownames(sum_empi) <- NULL
+p2_empi <- qplot(sentiment, data = sum_empi[1:8,], weight = count, geom = "bar",
+                 fill = sentiment)+
+                 theme_minimal()
+  
+p3_empi <- qplot(sentiment, data = sum_empi[9:10,], weight = count, geom = "bar", fill = sentiment)+
+            theme_minimal()
+
+ggarrange(p2_empi,p3_empi,ncol = 2, nrow = 1) %>%
+      annotate_figure(top=text_grob("Empiricism Sentiment Results"))
+```
+
+🧠 Mind is the word that obtains high frequency in works of two schools. Rationalism and empiricism are schools of thought that search for meaning in our existence. Each of these philosophies quest for the truth in our life by promoting skepticism, or a doubt that the other ideas are true.  
+
+🫀 Rationalism distinguishes between empirical knowledge, and a priori knowledge. Empirical knowledge depends upon our senses, senses that, the rationalist wastes no time to demonstrate,are unreliable. Here the rationalist appeals to common sense deceptions and perceptual illusions.
+
+## 4.German Idealism vs Analytic
+### 4.1 Publication List
+
+School                 Author            Title                                  Pubication Date
+--------               ----------        ------------                           ------------------
+German Idealism        Hegel             Elements Of The Philosophy Of Right    1820
+Analytic               Russell           The Analysis Of Mind                   1921
+                                         The Problems Of Philosophy             1912
+                       Moore             Philosophical Studies                  1910
+                       Wittgenstein      Philosophical Investigations           1953
+                                         Tractatus Logico-Philosophicus         1921
+                       Lewis             Lewis - Papers                         1985
+                       
+German idealism is the name of a movement in German philosophy that began in the 1780s and lasted until the 1840s. The most famous representatives of this movement are Kant, Fichte, Schelling, and Hegel. Kant’s transcendental idealism was a modest philosophical doctrine about the difference between appearances and things in themselves, which claimed that the objects of human cognition are appearances and not things in themselves. Fichte, Schelling, and Hegel radicalized this view, transforming Kant’s transcendental idealism into absolute idealism, which holds that things in themselves are a contradiction in terms, because a thing must be an object of our consciousness if it is to be an object at all.
+
+The history of analytic philosophy is usually thought to begin with the rejection of British idealism, a neo-Hegelian movement. Since its beginning, a basic goal of analytic philosophy has been conceptual clarity, in the name of which Moore and Russell rejected Hegelianism for being obscure—see for example Moore's "A Defence of Common Sense" and Russell's critique of the doctrine of internal relations. Inspired by developments in modern formal logic, the early Russell claimed that the problems of philosophy can be solved by showing the simple constituents of complex notions.
+
+### 4.2 Word Cloud and Frequency
+
+![](wordcloud3.png)
+
+```{r, fig.height = 3, fig.width = 8, echo = FALSE}
+#Word Frequency
+germ.word <- as.data.frame(as.matrix(germ.overall))
+germ.word <- germ.word[order(germ.word$`sum(count)`, decreasing = TRUE),] %>% head(10) %>% rename(n = 'sum(count)') %>% mutate(term = fct_reorder(term,n))
+p1_germ <- ggplot(germ.word, aes(x = reorder(term, n), y = n)) +
+  geom_bar(stat = 'identity', fill = '#f88421', colour = '#e8490f') +
+  labs(x = "Words", y = "Frequency", title = "German Idealism Words Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  coord_flip()
+
+anal.word <- as.data.frame(as.matrix(anal.overall))
+anal.word <- anal.word[order(anal.word$`sum(count)`, decreasing = TRUE),] %>% head(10) %>% rename(n = 'sum(count)') %>% mutate(term = fct_reorder(term,n))
+p1_anal <- ggplot(anal.word, aes(x = reorder(term, n), y = n)) +
+  geom_bar(stat = 'identity', fill = '#3f60aa', colour = '#2e409a') +
+  labs(x = "Words", y = "Frequency", title = "Analytic Words Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  coord_flip()
+
+ggarrange(p1_germ,p1_anal,ncol = 2, nrow = 1)
+```
+
+🕵 From the top frequent words in German Idealism we can conclude that the philosophical meaning of idealism here is that the properties we discover in objects depend on the way that those objects appear to us as perceiving subjects, and not something they possess in themselves, apart from our experience of them. Hence, thing in itself can be read as thing considered in itself without consideration of the cognitive faculties of mind. The question of what properties a thing might have independently of the mind is thus incoherent for Idealism.
+
+👷 In the writings of Analytics, authors use true, sense and theory etc. most frequently. That makes sense since the aim of the analytic approach is to clarify philosophical problems by examining and clarifying the language used to express them. This has led to a number of successes: Symbolic logic and other aspects of modern logic, recognizing the primary importance of sense and reference in the construction of meaning and the distinction between syntax and semantics in the study of language, Kurt Gödel's Incompleteness Theorem and Bertrand Russell's theory of definite descriptions.
+
+### 4.3 Sentiment Analytics
+
+```{r, fig.height = 3, fig.width = 10,echo = FALSE}
+#Sentiment Analytics
+cap_germ <- german_idealism[grep("individual", german_idealism$sentence_lowered),]
+text_germ <- cap_germ$sentence_lowered %>% as.character()
+result_germ <- get_nrc_sentiment(text_germ) %>% data.frame()
+sum_germ <- data.frame(colSums(result_germ))
+names(sum_germ) <- "count"
+sum_germ <- cbind("sentiment" = rownames(sum_germ), sum_germ)
+rownames(sum_germ) <- NULL
+p2_germ <- qplot(sentiment, data = sum_germ[1:8,], weight = count, geom = "bar",
+                 fill = sentiment)+
+                 theme_minimal()
+  
+p3_germ <- qplot(sentiment, data = sum_germ[9:10,], weight = count, geom = "bar", fill = sentiment) +
+            theme_minimal()
+
+ggarrange(p2_germ,p3_germ,ncol = 2, nrow = 1) %>%
+      annotate_figure(top=text_grob("German Idealism Sentiment Results"))
+
+cap_anal <- analytic[grep("true", analytic$sentence_lowered),]
+text_anal <- cap_anal$sentence_lowered %>% as.character()
+result_anal <- get_nrc_sentiment(text_anal) %>% data.frame()
+sum_anal <- data.frame(colSums(result_anal))
+names(sum_anal) <- "count"
+sum_anal <- cbind("sentiment" = rownames(sum_anal), sum_anal)
+rownames(sum_anal) <- NULL
+p2_anal <- qplot(sentiment, data = sum_anal[1:8,], weight = count, geom = "bar",
+                 fill = sentiment)+
+                 theme_minimal()
+  
+p3_anal <- qplot(sentiment, data = sum_anal[9:10,], weight = count, geom = "bar", fill = sentiment)+
+            theme_minimal()
+
+ggarrange(p2_anal,p3_anal,ncol = 2, nrow = 1) %>%
+      annotate_figure(top=text_grob("Analytic Sentiment Results"))
+```
+
+I pick the word "individual" and "true" to represent the nature of these two schools based on my perspective. We can tell from the charts that when mention these words, they express trust emotions much more than other sentiments. 
+
+🕵 Immanuel Kant's transcendental idealism consisted of taking a point of view outside and above oneself  and understanding that the mind directly knows only phenomena or ideas. Whatever exists other than mental phenomena, or ideas that appear to the mind, is a thing-in-itself and cannot be directly and immediately known.  
+
+👷 Analytic Philosophy holds that philosophy should apply logical techniques in order to attain conceptual clarity, and that philosophy should be consistent with the success of modern science. For many Analytic Philosophers, language is the principal tool, and philosophy consists in clarifying how language can be used.
+
+## 5.Capitalism vs Communism
+### 5.1 Publication List
+
+School        Author          Title                                                   Pubulication Date
+--------      ----------      ------------                                            ------------------------
+Capitalism    Smith           The Wealth Of Nations                                   1776
+              Ricardo         On The Principles Of Political Economy And Taxation     1817
+              Keynes          A General Theory Of Employment, Interest, And Money     1936
+Communism     Marx            Capital                                                 1883
+                              The Communist Manifesto                                 1848
+              Lenin           Essential Works Of Lenin                                1862
+              
+
+Adam Smith, the renowned Scottish Economist, wrote a book, The Wealth of Nations in which he sparked the idea of Capitalism. The term ‘capitalism’ implies an economic system that advocates private ownership of the means of production, distribution, and exchange, to earn profit. In this system, the determination of production and price of the goods and services are done by the market, i.e. the demand and supply forces play a significant role here.
+
+On the other hand, Karl Marx, a famous Philosopher, and Sociologist, from Germany, initiated the idea of Communism, in his book The Communist Manifesto, as a response to Capitalism. A form of socialism, in which the means of production, resources, and property are owned and controlled by the egalitarian society, i.e. by the community equally is called Communism. It is based on the idea of shared ownership. The theory of communism was mainly sparked by the German philosophers cum sociologist Karl Marx and Friedrich Engels.
+
+These two political theories are in opposition to each other as in the former promotes private ownership, the latter stands against it. 
+
+### 5.2 Word Cloud and Frequency
+
+![](wordcloud4.png)
+
+```{r, fig.height = 3, fig.width = 8, echo = FALSE}
+#Word Frequency
+capi.word <- as.data.frame(as.matrix(capi.overall))
+capi.word <- capi.word[order(capi.word$`sum(count)`, decreasing = TRUE),] %>% head(10) %>% rename(n = 'sum(count)') %>% mutate(term = fct_reorder(term,n))
+p1_capi <- ggplot(capi.word, aes(x = reorder(term, n), y = n)) +
+  geom_bar(stat = 'identity', fill = '#f88421', colour = '#e8490f') +
+  labs(x = "Words", y = "Frequency", title = "Capitalism Words Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  coord_flip()
+
+comm.word <- as.data.frame(as.matrix(comm.overall))
+comm.word <- comm.word[order(comm.word$`sum(count)`, decreasing = TRUE),] %>% head(10) %>% rename(n = 'sum(count)') %>% mutate(term = fct_reorder(term,n))
+p1_comm <- ggplot(comm.word, aes(x = reorder(term, n), y = n)) +
+  geom_bar(stat = 'identity', fill = '#3f60aa', colour = '#2e409a') +
+  labs(x = "Words", y = "Frequency", title = "Communism Words Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  coord_flip()
+
+ggarrange(p1_capi,p1_comm,ncol = 2, nrow = 1)
+```
+
+💼 It is not surprising that Capitalism most focus on price and money. The key features of capitalism are individual rights, private property, accumulation of wealth, market economy, free and competitive market, self-interest, minimal government intervention. In a capitalist economy, it is the owners who decide and invest, in the financial and capital market on the production inputs. The competition in the economy decided the price and distribution of merchandise in the economy.
+
+🪖 As for Communism, it seems that the authors are more concerned about labour and value. In this political system, the government owns everything and all the individual works for a common goal. Therefore, class distinction does not exist, as all are considered equal. Communism aims at removing the gap between the wealthy and poor and establishing equality in the economy.
+
+### 5.3 Sentiment Analytics
+
+```{r, fig.height = 3, fig.width = 8, echo = FALSE}
+#Sentiment Analytics
+cap_capi <- capitalism[grep("value", capitalism$sentence_lowered),]
+text_capi <- cap_capi$sentence_lowered %>% as.character()
+result_capi <- get_nrc_sentiment(text_capi) %>% data.frame()
+sum_capi <- data.frame(colSums(result_capi))
+names(sum_capi) <- "count"
+sum_capi <- cbind("sentiment" = rownames(sum_capi), sum_capi)
+rownames(sum_capi) <- NULL
+p2_capi <- qplot(sentiment, data = sum_capi[1:8,], weight = count, geom = "bar",
+                 fill = sentiment)+
+                 theme_minimal()
+  
+p3_capi <- qplot(sentiment, data = sum_capi[9:10,], weight = count, geom = "bar", fill = sentiment) +
+            theme_minimal()
+
+ggarrange(p2_capi,p3_capi,ncol = 2, nrow = 1) %>%
+      annotate_figure(top=text_grob("Capitalism Sentiment Results"))
+
+cap_comm <- communism[grep("value", communism$sentence_lowered),]
+text_comm <- cap_comm$sentence_lowered %>% as.character()
+result_comm <- get_nrc_sentiment(text_comm) %>% data.frame()
+sum_comm <- data.frame(colSums(result_comm))
+names(sum_comm) <- "count"
+sum_comm <- cbind("sentiment" = rownames(sum_comm), sum_comm)
+rownames(sum_comm) <- NULL
+p2_comm <- qplot(sentiment, data = sum_comm[1:8,], weight = count, geom = "bar",
+                 fill = sentiment)+
+                 theme_minimal()
+  
+p3_comm <- qplot(sentiment, data = sum_comm[9:10,], weight = count, geom = "bar", fill = sentiment)+
+            theme_minimal()
+
+ggarrange(p2_comm,p3_comm,ncol = 2, nrow = 1) %>%
+      annotate_figure(top=text_grob("Communism Sentiment Results"))
+```
+
+💼 Let's see the attitudes towards the word "value" in two schools. It seems that the Capitalism has more negative sentiment on this word, consisting of anger and sadness.In capitalism, every individual has to work for himself to create wealth. As opposed to this, in communism wealth is distributed as per needs and ability. 
+
+🪖 Capitalism is in favor of class distinction, i.e. working class and capitalist class, hence the degree of class distinction between rich and poor is very high. On the contrary, communism opposes a division of society according to class, as it promotes a classless society, so, there is no gap between rich and poor.
+
+## 6.Stoicism vs Feminism
+### 6.1 Publication List
+
+School        Author          Title                                                   Pubulication Date
+--------      ----------      ------------                                            ------------------------
+Stoicism      Epictetus       Enchiridion                                             125
+              Aurelius        Meditations Marcus                                      170
+Feminism      Wollstonecraft  Vindication Of The Rights Of Woman                      1792
+              Beauvoir        The Second Sex                                          1949
+              Davis           Women, Race, And Class                                  1981
+    
+Since the Stoics stress the systematic nature of their philosophy, the ideal way to evaluate the Stoics’ distinctive ethical views would be to study them within the context of a full exposition of their philosophy. However,We do not possess a single complete work by any of the first three heads of the Stoic school: Zeno of Citium in Cyprus (344–262 BCE), Cleanthes (d. 232 BCE) or Chrysippus (d. ca. 206 BCE). The only complete works by Stoic philosophers that we possess are those by writers of Imperial times, Seneca (4 BCE–65 CE), Epictetus (c. 55–135) and the Emperor Marcus Aurelius (121–180) and these works are principally focused on ethics. They tend to be long on moral exhortation but give only clues to the theoretical bases of the moral system. 
+
+Mary Wollstonecraft is seen by many as a founder of feminism due to her 1792 book titled A Vindication of the Rights of Woman in which she argues for women's education. Charles Fourier, a utopian socialist and French philosopher, is credited with having coined the word "féminisme" in 1837. Depending on the historical moment, culture and country, feminists around the world have had different causes and goals. Most western feminist historians contend that all movements working to obtain women's rights should be considered feminist movements, even when they did not apply the term to themselves. 
+          
+### 6.2 Word Cloud and Frequency
+
+![](wordcloud5.png)
+
+```{r, fig.height = 3, fig.width = 8, echo = FALSE}
+#Word Frequency
+stoi.word <- as.data.frame(as.matrix(stoi.overall))
+stoi.word <- stoi.word[order(stoi.word$`sum(count)`, decreasing = TRUE),] %>% head(10) %>% rename(n = 'sum(count)') %>% mutate(term = fct_reorder(term,n))
+p1_stoi <- ggplot(stoi.word, aes(x = reorder(term, n), y = n)) +
+  geom_bar(stat = 'identity', fill = '#f88421', colour = '#e8490f') +
+  labs(x = "Words", y = "Frequency", title = "Stoicism Words Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  coord_flip()
+
+femi.word <- as.data.frame(as.matrix(femi.overall))
+femi.word <- femi.word[order(femi.word$`sum(count)`, decreasing = TRUE),] %>% head(10) %>% rename(n = 'sum(count)') %>% mutate(term = fct_reorder(term,n))
+p1_femi <- ggplot(femi.word, aes(x = reorder(term, n), y = n)) +
+  geom_bar(stat = 'identity', fill = '#3f60aa', colour = '#2e409a') +
+  labs(x = "Words", y = "Frequency", title = "Feminism Words Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  coord_flip()
+
+ggarrange(p1_stoi,p1_femi,ncol = 2, nrow = 1)
+```
+
+👖 Because the writings of Stoicism are so outdated and they use old English to write, it's hard to make conclusion from the word frequency chart. ”Thou" means "you", "unto" means up to, "thy" is the possesive form of you and so on. The only meaningful words in top 10 are nature, world and mind. 
+
+👗 It makes lots of sense that the most frequently word of Feminism is woman or women. Feminism is a range of socio-political movements and ideologies that aim to define and establish the political, economic, personal, and social equality of the sexes. Feminism incorporates the position that societies prioritize the male point of view, and that women are treated unjustly within those societies.[6] Efforts to change that include fighting against gender stereotypes and establishing educational, professional, and interpersonal opportunities and outcomes for women that are equal to those for men.
+
+### 6.3 Sentiment Analytics
+
+```{r, fig.height = 3, fig.width = 10,echo = FALSE}
+#Sentiment Analytics
+cap_stoi <- stoicism[grep("thou", stoicism$sentence_lowered),]
+text_stoi <- cap_stoi$sentence_lowered %>% as.character()
+result_stoi <- get_nrc_sentiment(text_stoi) %>% data.frame()
+sum_stoi <- data.frame(colSums(result_stoi))
+names(sum_stoi) <- "count"
+sum_stoi <- cbind("sentiment" = rownames(sum_stoi), sum_stoi)
+rownames(sum_stoi) <- NULL
+p2_stoi <- qplot(sentiment, data = sum_stoi[1:8,], weight = count, geom = "bar",
+                 fill = sentiment)+
+                 theme_minimal()
+  
+p3_stoi <- qplot(sentiment, data = sum_stoi[9:10,], weight = count, geom = "bar", fill = sentiment) +
+            theme_minimal()
+
+ggarrange(p2_stoi,p3_stoi,ncol = 2, nrow = 1) %>%
+      annotate_figure(top=text_grob("Stoicism Sentiment Results"))
+
+cap_femi <- feminism[grep("male", feminism$sentence_lowered),]
+text_femi <- cap_femi$sentence_lowered %>% as.character()
+result_femi <- get_nrc_sentiment(text_femi) %>% data.frame()
+sum_femi <- data.frame(colSums(result_femi))
+names(sum_femi) <- "count"
+sum_femi <- cbind("sentiment" = rownames(sum_femi), sum_femi)
+rownames(sum_femi) <- NULL
+p2_femi <- qplot(sentiment, data = sum_femi[1:8,], weight = count, geom = "bar",
+                 fill = sentiment)+
+                 theme_minimal()
+  
+p3_femi <- qplot(sentiment, data = sum_femi[9:10,], weight = count, geom = "bar",  fill = sentiment)+
+            theme_minimal()
+
+ggarrange(p2_femi,p3_femi,ncol = 2, nrow = 1) %>%
+      annotate_figure(top=text_grob("Feminism Sentiment Results"))
+```
+
+👖 Due to the language the authors use, we can only do this part in a more general way. When considering the doctrines of the Stoics, it is important to remember that they think of philosophy not as an interesting pastime or even a particular body of knowledge, but as a way of life. They define philosophy as a kind of practice or exercise  in the expertise concerning what is beneficial. Once we come to know what we and the world around us are really like, and especially the nature of value, we will be utterly transformed. 
+
+👗 I want to know what attitude the Feminism authors hold when mentioning male. Although feminist advocacy is, and has been, mainly focused on women's rights, some feminists argue for the inclusion of men's liberation within its aims, because they believe that men are also harmed by traditional gender roles. Feminist theory, which emerged from feminist movements, aims to understand the nature of gender inequality by examining women's social roles and lived experience; feminist theorists have developed theories in a variety of disciplines in order to respond to issues concerning gender.
+
+
+
+
+
+<center>![](pic1.jpg)</center>
